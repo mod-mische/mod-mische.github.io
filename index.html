@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unsere Mod-Mische</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#eef0ea; --surface:#f9faf6; --sunken:#e2e6dc; --line:#c9cfbf;
+  --fg:#1f2a1f; --muted:#5c685a; --accent:#3f7d3a; --accent-fg:#ffffff;
+  --in:#2f7a3c; --in-bg:#dcefd9; --prop:#9a6a12; --prop-bg:#f6ead0; --out:#a23b32; --out-bg:#f5dcd8;
+  --display:"Pixelify Sans", ui-monospace, monospace;
+  --body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#161b16; --surface:#1e251e; --sunken:#121612; --line:#334033;
+  --fg:#e3eadf; --muted:#97a593; --accent:#6fbf63; --accent-fg:#0f1a0e;
+  --in:#7fd486; --in-bg:#1f3a22; --prop:#e6b65a; --prop-bg:#3a2f16; --out:#f08a7e; --out-bg:#3d1f1c;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:880px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+h1,h2{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.1}
+h2{font-size:19px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:10px}
+.pack{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pack .chip{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:4px 10px;border-radius:4px}
+.linkbtn{background:none;border:0;color:var(--accent);font:inherit;font-size:13px;cursor:pointer;padding:4px 2px;text-decoration:underline;text-underline-offset:3px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.stats b{font-family:var(--mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.grid2{grid-template-columns:1fr}}
+label{display:grid;gap:5px;font-size:13px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:15px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:42px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:600;font-size:14px;border-radius:4px;padding:9px 16px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 55%,black)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line);box-shadow:none}
+.row-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dupe{border-radius:4px;padding:10px 12px;font-size:13.5px;display:grid;gap:6px}
+.dupe.hard{background:var(--out-bg);color:var(--out)}
+.dupe.soft{background:var(--prop-bg);color:var(--prop)}
+.dupe ul{margin:0;padding-left:18px}
+.msg{font-size:13.5px;color:var(--muted)}
+.msg.err{color:var(--out)}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);overflow-x:auto}
+.tab{font:inherit;font-weight:600;font-size:14px;background:none;border:0;padding:10px 14px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tab .n{font-family:var(--mono);font-size:12px;margin-left:6px;padding:1px 6px;border-radius:3px;background:var(--sunken)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar input{flex:1 1 220px}
+.toolbar select{flex:0 1 190px}
+.list{display:grid;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.mod{display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:14px 16px;border-top:1px solid var(--line);align-items:start}
+.mod:first-child{border-top:0}
+.slot{width:38px;height:38px;border-radius:4px;background:var(--sunken);border:2px solid var(--line);display:grid;place-items:center;font-family:var(--display);font-size:18px;color:var(--muted);box-shadow:inset 2px 2px 0 color-mix(in srgb,black 12%,transparent)}
+.mod-main{min-width:0;display:grid;gap:4px}
+.mod-title{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.mod-title strong{font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.mod-title a{font-size:12.5px;color:var(--accent);font-family:var(--mono)}
+.meta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+.note{font-size:14px;overflow-wrap:anywhere}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+.pill.in{background:var(--in-bg);color:var(--in)}
+.pill.proposed{background:var(--prop-bg);color:var(--prop)}
+.pill.out{background:var(--out-bg);color:var(--out)}
+.side{display:grid;gap:8px;justify-items:end}
+.votes{display:flex;align-items:center;gap:4px}
+.vbtn{font:inherit;font-weight:600;font-size:13px;min-width:44px;padding:5px 8px;border-radius:4px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;font-variant-numeric:tabular-nums}
+.vbtn.up[aria-pressed="true"]{background:var(--in-bg);border-color:var(--in);color:var(--in)}
+.vbtn.down[aria-pressed="true"]{background:var(--out-bg);border-color:var(--out);color:var(--out)}
+.voters{font-size:11.5px;color:var(--muted);text-align:right;max-width:220px}
+.status-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.sbtn{font:inherit;font-size:12.5px;padding:4px 9px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.sbtn:hover{border-color:var(--accent)}
+.sbtn.danger{color:var(--out)}
+.hint{font-size:12px;font-weight:600}
+.hint.yes{color:var(--in)} .hint.no{color:var(--out)}
+@media (max-width:560px){
+  .mod{grid-template-columns:auto 1fr}
+  .side{grid-column:1/-1;justify-items:start}
+  .voters{text-align:left}.status-actions{justify-content:flex-start}
+}
+.empty{padding:34px 18px;text-align:center;color:var(--muted);display:grid;gap:6px}
+.empty strong{font-family:var(--display);font-size:18px;color:var(--fg)}
+.confirm{display:flex;gap:6px;align-items:center;font-size:12.5px}
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 85%,transparent);display:grid;place-items:center;padding:16px;z-index:20}
+.overlay .panel{max-width:400px;width:100%}
+.whoami{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="overlay" id="nameDlg" hidden>
+  <form class="panel" id="nameForm">
+    <h2>Wie heißt du?</h2>
+    <span class="msg">Damit die anderen sehen, wer was vorgeschlagen und wie abgestimmt hat. Am besten dein Minecraft-Name.</span>
+    <label>Name<input id="nameInput" maxlength="30" required></label>
+    <div class="row-actions"><button class="btn" type="submit">Los geht's</button></div>
+  </form>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Minecraft · Modpack-Planung</div>
+    <h1 id="packTitle">Unsere Mod-Mische</h1>
+    <div class="pack" id="packChips"></div>
+    <form class="panel" id="packForm" hidden>
+      <div class="grid2">
+        <label>Name der Mische<input id="pName" maxlength="60"></label>
+        <label>Minecraft-Version<input id="pVer" placeholder="z. B. 1.21.1" maxlength="20"></label>
+        <label>Mod-Loader
+          <select id="pLoader"><option>NeoForge</option><option>Forge</option><option>Fabric</option><option>Quilt</option></select>
+        </label>
+      </div>
+      <div class="row-actions"><button class="btn" type="submit">Speichern</button><button class="btn ghost" type="button" id="pCancel">Abbrechen</button></div>
+    </form>
+    <div class="stats" id="stats"></div>
+    <div class="whoami" id="whoami"></div>
+  </header>
+
+  <form class="panel" id="addForm" autocomplete="off">
+    <h2>Mod vorschlagen</h2>
+    <div class="grid2">
+      <label>Name der Mod<input id="fName" required maxlength="80" placeholder="z. B. Create"></label>
+      <label>Link (Modrinth / CurseForge)<input id="fUrl" type="url" maxlength="300" placeholder="https://modrinth.com/mod/…"></label>
+      <label>Kategorie<select id="fCat"></select></label>
+      <label>Warum? (optional)<textarea id="fNote" rows="1" maxlength="400" placeholder="Was bringt sie der Mische?"></textarea></label>
+    </div>
+    <div id="dupeBox" hidden></div>
+    <div class="row-actions">
+      <button class="btn" type="submit" id="fSubmit">Vorschlagen</button>
+      <span class="msg" id="fMsg" role="status"></span>
+    </div>
+  </form>
+
+  <section style="display:grid;gap:14px">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="In allen Mods suchen…" aria-label="Suchen">
+      <select id="catFilter" aria-label="Kategorie filtern"></select>
+      <button class="btn ghost" type="button" id="copyList">Liste kopieren</button>
+    </div>
+    <div class="list" id="list"><div class="empty"><strong>Lade die Mische…</strong><span>Einen Moment, die Liste wird geholt.</span></div></div>
+    <span class="msg" id="copyMsg" role="status"></span>
+  </section>
+</div>
+
+<script type="module">
+// =====================================================================
+//  HIER DEINE FIREBASE-DATEN EINFÜGEN (Schritt 5 der Anleitung)
+// =====================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDVt-xwbPllSu9_eWlMg8VnKuhif5jhBno",
+  authDomain: "mod-mische.firebaseapp.com",
+  projectId: "mod-mische",
+  storageBucket: "mod-mische.firebasestorage.app",
+  messagingSenderId: "594969816603",
+  appId: "1:594969816603:web:b82e148b8ca714c23612be"
+};
+// =====================================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CATS = ["Technik","Magie","Abenteuer & Dungeons","Welt & Biome","Mobs & Kreaturen","Bauen & Deko","Essen & Farmen","Lager & Inventar","Quality of Life","Performance","Grafik & Shader","Bibliothek / Abhängigkeit","Sonstiges"];
+const STATUS = {in:"In der Mische", proposed:"Vorschlag", out:"Abgelehnt"};
+const TABS = [["in","In der Mische"],["proposed","Vorschläge"],["out","Abgelehnt"]];
+const $ = id => document.getElementById(id);
+const state = { mods:[], votes:{}, people:{}, pack:{}, me:null, tab:"proposed", q:"", cat:"", confirmDel:null, loaded:false };
+
+$("fCat").innerHTML = CATS.map(c=>`<option>${c}</option>`).join("");
+$("catFilter").innerHTML = `<option value="">Alle Kategorien</option>` + CATS.map(c=>`<option>${c}</option>`).join("");
+
+if (firebaseConfig.apiKey === "HIER_EINFÜGEN") {
+  $("list").innerHTML = `<div class="empty"><strong>Firebase ist noch nicht eingetragen</strong><span>Öffne index.html und füge oben im Skript deine firebaseConfig ein (Schritt 5 der Anleitung).</span></div>`;
+  throw new Error("firebaseConfig fehlt");
+}
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const norm = s => (s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]/g,"");
+function slugFromUrl(u){
+  try{
+    const url=new URL(u); const p=url.pathname.split("/").filter(Boolean);
+    if(/modrinth\.com$/.test(url.hostname) && p.length>=2) return "mr:"+p[1].toLowerCase();
+    if(/curseforge\.com$/.test(url.hostname)){ const i=p.indexOf("mc-mods"); if(i>=0&&p[i+1]) return "cf:"+p[i+1].toLowerCase(); }
+    return "url:"+url.hostname+url.pathname.replace(/\/$/,"").toLowerCase();
+  }catch{ return ""; }
+}
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => { try{ const x=new URL(u); return /^https?:$/.test(x.protocol)?x.href:""; }catch{return "";} };
+const nm = id => id===state.me ? "du" : (state.people[id] || "Jemand");
+function tally(id){
+  const up=[],down=[];
+  for(const [uid,d] of Object.entries(state.votes)){ const v=d&&d.v&&d.v[id]; if(v===1)up.push(uid); else if(v===-1)down.push(uid); }
+  return {up,down};
+}
+
+// ---------- Duplikat-Prüfung ----------
+function findDupes(){
+  const k=norm($("fName").value.trim()), url=$("fUrl").value.trim(), slug=url?slugFromUrl(url):"";
+  const hard=[], soft=[];
+  if(!k && !slug) return {hard,soft};
+  for(const m of state.mods){
+    if((k && m.id===k) || (slug && m.slug && m.slug===slug)) hard.push(m);
+    else if(k.length>=3 && (m.id.includes(k)||k.includes(m.id))) soft.push(m);
+  }
+  return {hard,soft:soft.slice(0,5)};
+}
+function renderDupes(){
+  const box=$("dupeBox"); const {hard,soft}=findDupes();
+  if(hard.length){
+    const m=hard[0]; box.className="dupe hard"; box.hidden=false;
+    box.innerHTML=`<strong>„${esc(m.name)}“ gibt es schon</strong><span>Status: ${STATUS[m.status]}. Stimm lieber dort ab, statt sie doppelt einzutragen.</span>`;
+    $("fSubmit").disabled=true;
+  } else if(soft.length){
+    box.className="dupe soft"; box.hidden=false;
+    box.innerHTML=`<span>Ähnliche Einträge, schau kurz nach:</span><ul>${soft.map(m=>`<li>${esc(m.name)} · ${STATUS[m.status]}</li>`).join("")}</ul>`;
+    $("fSubmit").disabled=false;
+  } else { box.hidden=true; $("fSubmit").disabled=false; }
+}
+$("fName").addEventListener("input",renderDupes);
+$("fUrl").addEventListener("input",renderDupes);
+
+// ---------- Anzeige ----------
+function render(){
+  const p=state.pack;
+  $("packTitle").textContent = p.name || "Unsere Mod-Mische";
+  document.title = p.name || "Unsere Mod-Mische";
+  $("packChips").innerHTML = `<span class="chip">MC ${esc(p.mcVersion||"Version offen")}</span><span class="chip">${esc(p.loader||"Loader offen")}</span><button class="linkbtn" type="button" id="editPack">Pack-Infos ändern</button>`;
+  $("editPack").onclick=()=>{ $("pName").value=p.name||""; $("pVer").value=p.mcVersion||""; $("pLoader").value=p.loader||"NeoForge"; $("packForm").hidden=false; $("pName").focus(); };
+  $("whoami").innerHTML = state.me ? `Angemeldet als <strong>${esc(state.people[state.me]||"…")}</strong> · <button class="linkbtn" type="button" id="rename">Namen ändern</button>` : "";
+  const rn=$("rename"); if(rn) rn.onclick=()=>askName(true);
+
+  const counts={in:0,proposed:0,out:0}; state.mods.forEach(m=>counts[m.status]=(counts[m.status]||0)+1);
+  const voters=Object.values(state.votes).filter(d=>d&&d.v&&Object.keys(d.v).length).length;
+  $("stats").innerHTML=`<span><b>${counts.in}</b> in der Mische</span><span><b>${counts.proposed}</b> offen zur Abstimmung</span><span><b>${voters}</b> haben schon abgestimmt</span>`;
+  $("tabs").innerHTML = TABS.map(([k,l])=>`<button class="tab" role="tab" type="button" data-tab="${k}" aria-selected="${state.tab===k}">${l}<span class="n">${counts[k]}</span></button>`).join("");
+
+  if(!state.loaded) return;
+  const q=norm(state.q);
+  let items = q ? state.mods.filter(m=>m.id.includes(q)||norm(m.note).includes(q)) : state.mods.filter(m=>m.status===state.tab);
+  if(state.cat) items=items.filter(m=>m.category===state.cat);
+  items.sort((a,b)=>{
+    if(state.tab==="proposed"&&!q){ const ta=tally(a.id),tb=tally(b.id); const d=(tb.up.length-tb.down.length)-(ta.up.length-ta.down.length); if(d) return d; }
+    return a.name.localeCompare(b.name,"de");
+  });
+
+  const list=$("list");
+  if(!items.length){
+    const msgs={in:["Noch nichts drin","Sobald ein Vorschlag angenommen wird, landet er hier."],proposed:["Keine offenen Vorschläge","Trag oben die erste Mod ein, dann können alle abstimmen."],out:["Nichts abgelehnt","Hier landen Mods, die nicht in die Mische kommen."]};
+    const [t,s]= q||state.cat ? ["Nichts gefunden","Versuch einen anderen Suchbegriff oder eine andere Kategorie."] : msgs[state.tab];
+    list.innerHTML=`<div class="empty"><strong>${t}</strong><span>${s}</span></div>`; return;
+  }
+  const myVotes=(state.votes[state.me]&&state.votes[state.me].v)||{};
+  list.innerHTML = items.map(m=>{
+    const t=tally(m.id), mine=myVotes[m.id]||0, score=t.up.length-t.down.length;
+    const url=safeUrl(m.url); const host=url?new URL(url).hostname.replace(/^www\./,""):"";
+    const hint = m.status==="proposed" && (t.up.length+t.down.length)>=2 ? (score>0?`<span class="hint yes">Mehrheit dafür</span>`:score<0?`<span class="hint no">Mehrheit dagegen</span>`:"") : "";
+    const del = m.by!==state.me ? "" : state.confirmDel===m.id
+      ? `<span class="confirm">Wirklich löschen?<button class="sbtn danger" data-act="delyes" data-id="${m.id}" type="button">Ja</button><button class="sbtn" data-act="delno" type="button">Nein</button></span>`
+      : `<button class="sbtn danger" data-act="del" data-id="${m.id}" type="button">Löschen</button>`;
+    const moves = ["in","proposed","out"].filter(s=>s!==m.status).map(s=>`<button class="sbtn" data-act="status" data-s="${s}" data-id="${m.id}" type="button">${s==="in"?"In die Mische":s==="out"?"Ablehnen":"Zurück zu Vorschlägen"}</button>`).join("");
+    const vlist=[t.up.length?`dafür: ${t.up.map(nm).join(", ")}`:"", t.down.length?`dagegen: ${t.down.map(nm).join(", ")}`:""].filter(Boolean).join(" · ");
+    return `<article class="mod">
+      <div class="slot" aria-hidden="true">${esc((m.name[0]||"?").toUpperCase())}</div>
+      <div class="mod-main">
+        <div class="mod-title"><strong>${esc(m.name)}</strong>${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(host)} ↗</a>`:""}${q?`<span class="pill ${m.status}">${STATUS[m.status]}</span>`:""}</div>
+        <div class="meta"><span>${esc(m.category||"Sonstiges")}</span><span>vorgeschlagen von ${esc(nm(m.by))}</span></div>
+        ${m.note?`<div class="note">${esc(m.note)}</div>`:""}
+      </div>
+      <div class="side">
+        <div class="votes">
+          <button class="vbtn up" type="button" data-act="vote" data-v="1" data-id="${m.id}" aria-pressed="${mine===1}" aria-label="Dafür">▲ ${t.up.length}</button>
+          <button class="vbtn down" type="button" data-act="vote" data-v="-1" data-id="${m.id}" aria-pressed="${mine===-1}" aria-label="Dagegen">▼ ${t.down.length}</button>
+        </div>
+        ${hint}
+        ${vlist?`<div class="voters">${esc(vlist)}</div>`:""}
+        <div class="status-actions">${moves}${del}</div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function fail(err){
+  console.error(err);
+  $("fMsg").className="msg err";
+  $("fMsg").textContent = err && err.code==="permission-denied"
+    ? "Das wurde abgelehnt. Diese Mod gibt es vermutlich schon."
+    : "Das hat nicht geklappt. Prüf deine Internetverbindung und versuch es nochmal.";
+}
+
+// ---------- Aktionen ----------
+$("tabs").addEventListener("click",e=>{ const b=e.target.closest("[data-tab]"); if(!b)return; state.tab=b.dataset.tab; state.q=""; $("search").value=""; render(); });
+$("search").addEventListener("input",e=>{ state.q=e.target.value; render(); });
+$("catFilter").addEventListener("change",e=>{ state.cat=e.target.value; render(); });
+$("pCancel").onclick=()=>{ $("packForm").hidden=true; };
+
+let voteChain=Promise.resolve();
+$("list").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]"); if(!b||!state.me) return;
+  const id=b.dataset.id, act=b.dataset.act;
+  try{
+    if(act==="vote"){
+      const cur={...((state.votes[state.me]&&state.votes[state.me].v)||{})};
+      const v=Number(b.dataset.v); if(cur[id]===v) delete cur[id]; else cur[id]=v;
+      state.votes[state.me]={v:cur}; render();
+      voteChain=voteChain.then(()=>setDoc(doc(db,"votes",state.me),{v:cur})).catch(fail);
+    } else if(act==="status"){
+      await updateDoc(doc(db,"mods",id),{status:b.dataset.s, changedBy:state.me, changedAt:Date.now()});
+    } else if(act==="del"){ state.confirmDel=id; render(); }
+    else if(act==="delno"){ state.confirmDel=null; render(); }
+    else if(act==="delyes"){ state.confirmDel=null; await deleteDoc(doc(db,"mods",id)); }
+  }catch(err){ fail(err); }
+});
+
+$("addForm").addEventListener("submit",async e=>{
+  e.preventDefault(); if(!state.me) return;
+  const name=$("fName").value.trim(), key=norm(name);
+  if(!key){ $("fMsg").className="msg err"; $("fMsg").textContent="Der Name braucht mindestens einen Buchstaben oder eine Zahl."; return; }
+  if(findDupes().hard.length) return;
+  const url=$("fUrl").value.trim();
+  $("fSubmit").disabled=true;
+  try{
+    const ref=doc(db,"mods",key);
+    if((await getDoc(ref)).exists()){ $("fMsg").className="msg err"; $("fMsg").textContent="Die gibt es schon."; return; }
+    await setDoc(ref,{name, slug:url?slugFromUrl(url):"", url:safeUrl(url), category:$("fCat").value, note:$("fNote").value.trim(), status:"proposed", by:state.me, at:Date.now()});
+    $("addForm").reset(); $("dupeBox").hidden=true;
+    $("fMsg").className="msg"; $("fMsg").textContent=`„${name}“ steht jetzt bei den Vorschlägen.`;
+    state.tab="proposed"; render();
+  }catch(err){ fail(err); }
+  finally{ $("fSubmit").disabled=false; }
+});
+
+$("packForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{ await setDoc(doc(db,"meta","pack"),{name:$("pName").value.trim(), mcVersion:$("pVer").value.trim(), loader:$("pLoader").value}); $("packForm").hidden=true; }
+  catch(err){ fail(err); }
+});
+
+$("copyList").addEventListener("click",()=>{
+  const ins=state.mods.filter(m=>m.status==="in").sort((a,b)=>a.name.localeCompare(b.name,"de"));
+  const p=state.pack;
+  const text=`${p.name||"Unsere Mod-Mische"} (MC ${p.mcVersion||"?"}, ${p.loader||"?"})\n\n`+ins.map(m=>`- ${m.name}${m.url?" – "+m.url:""}`).join("\n");
+  navigator.clipboard.writeText(text).then(()=>{ $("copyMsg").textContent=`${ins.length} Mods in die Zwischenablage kopiert.`; },()=>{ $("copyMsg").textContent="Kopieren wurde vom Browser blockiert."; });
+});
+
+// ---------- Name ----------
+function askName(force){
+  if(!force && state.people[state.me]) return;
+  $("nameInput").value = state.people[state.me] || "";
+  $("nameDlg").hidden=false; $("nameInput").focus();
+}
+$("nameForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const n=$("nameInput").value.trim().slice(0,30); if(!n) return;
+  try{ await setDoc(doc(db,"people",state.me),{name:n}); $("nameDlg").hidden=true; }
+  catch(err){ fail(err); }
+});
+
+// ---------- Start ----------
+onAuthStateChanged(auth, user=>{
+  if(!user) return;
+  state.me=user.uid;
+  let peopleLoaded=false;
+  onSnapshot(collection(db,"mods"), s=>{ state.mods=s.docs.map(d=>({id:d.id,...d.data()})); state.loaded=true; render(); renderDupes(); }, fail);
+  onSnapshot(collection(db,"votes"), s=>{ const v={}; s.docs.forEach(d=>v[d.id]=d.data()); state.votes=v; render(); }, fail);
+  onSnapshot(collection(db,"people"), s=>{ const p={}; s.docs.forEach(d=>p[d.id]=d.data().name); state.people=p; render(); if(!peopleLoaded){ peopleLoaded=true; askName(false); } }, fail);
+  onSnapshot(doc(db,"meta","pack"), s=>{ state.pack=s.exists()?s.data():{}; render(); }, fail);
+});
+signInAnonymously(auth).catch(err=>{
+  console.error(err);
+  $("list").innerHTML=`<div class="empty"><strong>Anmeldung fehlgeschlagen</strong><span>Prüfe in Firebase, ob „Anonym“ als Anmeldemethode aktiviert ist (Schritt 3 der Anleitung).</span></div>`;
+});
+render();
+</script>
+</body>
+</html>

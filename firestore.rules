@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function str(v, max) { return v is string && v.size() <= max; }
+
+    // Mods: Dokument-ID = normalisierter Name -> Doppelte sind unmöglich
+    match /mods/{modId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && modId.matches('^[a-z0-9]{1,80}$')
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.status == 'proposed'
+        && str(request.resource.data.name, 80) && request.resource.data.name.size() > 0
+        && str(request.resource.data.url, 300)
+        && str(request.resource.data.note, 400)
+        && str(request.resource.data.category, 40)
+        && str(request.resource.data.slug, 320);
+      // Jeder darf nur den Status ändern (rein / Vorschlag / abgelehnt)
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'changedBy', 'changedAt'])
+        && request.resource.data.status in ['proposed', 'in', 'out'];
+      // Löschen darf nur, wer die Mod vorgeschlagen hat
+      allow delete: if signedIn() && resource.data.by == request.auth.uid;
+    }
+
+    // Stimmen: jeder liest alle, schreibt aber nur seine eigene
+    match /votes/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['v']);
+    }
+
+    // Namen: jeder setzt nur seinen eigenen
+    match /people/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && str(request.resource.data.name, 30) && request.resource.data.name.size() > 0;
+    }
+
+    // Pack-Infos (Name, Version, Loader)
+    match /meta/pack {
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && str(request.resource.data.name, 60)
+        && str(request.resource.data.mcVersion, 20)
+        && str(request.resource.data.loader, 20);
+    }
+  }
+}
