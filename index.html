@@ -439,7 +439,7 @@ $("mrpackBtn").addEventListener("click", async ()=>{
     step("Lade Projekt-Infos");
     const projects=await mr(`/projects?ids=${encodeURIComponent(JSON.stringify([...files.keys()]))}`)||[];
     const pmap=Object.fromEntries(projects.map(x=>[x.id,x]));
-    const side=s=> s==="unsupported"?"unsupported" : s==="optional"?"optional" : "required";
+    const side=s=> s==="unsupported"?"unsupported" : "required";
     step(`Suche passende ${loaderName}-Version`);
     const lv=await loaderVersion(loader,mc);
     if(!lv){ exportMsg(`<strong>${esc(loaderName)}-Version unbekannt</strong><span class="msg">Trag sie unter „Pack-Infos ändern“ bei Loader-Version ein und versuch es nochmal.</span>`); return; }
