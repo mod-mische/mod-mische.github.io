@@ -379,9 +379,11 @@ const versionsFor = (pid,loader,mc) => mr(`/project/${encodeURIComponent(pid)}/v
 async function findProject(m,loader,mc){
   if(m.slug && m.slug.startsWith("mr:")) return m.slug.slice(3);
   const facets=JSON.stringify([["project_type:mod"],["categories:"+loader],["versions:"+mc]]);
-  const res=await mr(`/search?limit=10&query=${encodeURIComponent(m.name)}&facets=${encodeURIComponent(facets)}`);
+  const q=m.name.replace(/[´`'’‘]/g,"").replace(/[^\p{L}\p{N}]+/gu," ").trim();
+  const res=await mr(`/search?limit=10&query=${encodeURIComponent(q)}&facets=${encodeURIComponent(facets)}`);
   const k=norm(m.name);
-  const hit=res&&res.hits.find(h=>norm(h.title)===k||norm(h.slug)===k);
+  const strip=t=>t.replace(/\s*[\(\[][^)\]]*[\)\]]\s*/g," ").replace(/\b(fabric|quilt|neoforge|forge)\b/gi,"");
+  const hit=res&&res.hits.find(h=>norm(h.title)===k||norm(h.slug)===k||norm(strip(h.title))===k);
   return hit?hit.project_id:null;
 }
 async function loaderVersion(loader,mc){
