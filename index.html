@@ -123,6 +123,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
         <label>Mod-Loader
           <select id="pLoader"><option>NeoForge</option><option>Forge</option><option>Fabric</option><option>Quilt</option></select>
         </label>
+        <label>Loader-Version (optional)<input id="pLv" placeholder="leer = neueste automatisch" maxlength="30"></label>
       </div>
       <div class="row-actions"><button class="btn" type="submit">Speichern</button><button class="btn ghost" type="button" id="pCancel">Abbrechen</button></div>
     </form>
@@ -151,12 +152,15 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
       <input id="search" type="search" placeholder="In allen Mods suchen…" aria-label="Suchen">
       <select id="catFilter" aria-label="Kategorie filtern"></select>
       <button class="btn ghost" type="button" id="copyList">Liste kopieren</button>
+      <button class="btn" type="button" id="mrpackBtn">Als Modrinth-Pack speichern</button>
     </div>
+    <div class="panel" id="exportBox" hidden></div>
     <div class="list" id="list"><div class="empty"><strong>Lade die Mische…</strong><span>Einen Moment, die Liste wird geholt.</span></div></div>
     <span class="msg" id="copyMsg" role="status"></span>
   </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module">
 // =====================================================================
 //  HIER DEINE FIREBASE-DATEN EINFÜGEN (Schritt 5 der Anleitung)
@@ -243,7 +247,7 @@ function render(){
   $("packTitle").textContent = p.name || "Unsere Mod-Mische";
   document.title = p.name || "Unsere Mod-Mische";
   $("packChips").innerHTML = `<span class="chip">MC ${esc(p.mcVersion||"Version offen")}</span><span class="chip">${esc(p.loader||"Loader offen")}</span><button class="linkbtn" type="button" id="editPack">Pack-Infos ändern</button>`;
-  $("editPack").onclick=()=>{ $("pName").value=p.name||""; $("pVer").value=p.mcVersion||""; $("pLoader").value=p.loader||"NeoForge"; $("packForm").hidden=false; $("pName").focus(); };
+  $("editPack").onclick=()=>{ $("pName").value=p.name||""; $("pVer").value=p.mcVersion||""; $("pLoader").value=p.loader||"NeoForge"; $("pLv").value=p.loaderVersion||""; $("packForm").hidden=false; $("pName").focus(); };
   $("whoami").innerHTML = state.me ? `Angemeldet als <strong>${esc(state.people[state.me]||"…")}</strong> · <button class="linkbtn" type="button" id="rename">Namen ändern</button>` : "";
   const rn=$("rename"); if(rn) rn.onclick=()=>askName(true);
 
@@ -349,7 +353,7 @@ $("addForm").addEventListener("submit",async e=>{
 
 $("packForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  try{ await setDoc(doc(db,"meta","pack"),{name:$("pName").value.trim(), mcVersion:$("pVer").value.trim(), loader:$("pLoader").value}); $("packForm").hidden=true; }
+  try{ await setDoc(doc(db,"meta","pack"),{name:$("pName").value.trim(), mcVersion:$("pVer").value.trim(), loader:$("pLoader").value, loaderVersion:$("pLv").value.trim()}); $("packForm").hidden=true; }
   catch(err){ fail(err); }
 });
 
@@ -358,6 +362,111 @@ $("copyList").addEventListener("click",()=>{
   const p=state.pack;
   const text=`${p.name||"Unsere Mod-Mische"} (MC ${p.mcVersion||"?"}, ${p.loader||"?"})\n\n`+ins.map(m=>`- ${m.name}${m.url?" – "+m.url:""}`).join("\n");
   navigator.clipboard.writeText(text).then(()=>{ $("copyMsg").textContent=`${ins.length} Mods in die Zwischenablage kopiert.`; },()=>{ $("copyMsg").textContent="Kopieren wurde vom Browser blockiert."; });
+});
+
+// ---------- Modrinth-Pack (.mrpack) ----------
+const LOADER_KEY={NeoForge:"neoforge",Forge:"forge",Fabric:"fabric",Quilt:"quilt"};
+const DEP_KEY={neoforge:"neoforge",forge:"forge",fabric:"fabric-loader",quilt:"quilt-loader"};
+const MR="https://api.modrinth.com/v2";
+async function mr(path){
+  const r=await fetch(MR+path);
+  if(r.status===404) return null;
+  if(!r.ok) throw new Error("Modrinth antwortet mit Fehler "+r.status);
+  return r.json();
+}
+const pickVersion = list => !list||!list.length ? null : (list.find(v=>v.version_type==="release")||list.find(v=>v.version_type==="beta")||list[0]);
+const versionsFor = (pid,loader,mc) => mr(`/project/${encodeURIComponent(pid)}/version?loaders=${encodeURIComponent(JSON.stringify([loader]))}&game_versions=${encodeURIComponent(JSON.stringify([mc]))}`);
+async function findProject(m,loader,mc){
+  if(m.slug && m.slug.startsWith("mr:")) return m.slug.slice(3);
+  const facets=JSON.stringify([["project_type:mod"],["categories:"+loader],["versions:"+mc]]);
+  const res=await mr(`/search?limit=10&query=${encodeURIComponent(m.name)}&facets=${encodeURIComponent(facets)}`);
+  const k=norm(m.name);
+  const hit=res&&res.hits.find(h=>norm(h.title)===k||norm(h.slug)===k);
+  return hit?hit.project_id:null;
+}
+async function loaderVersion(loader,mc){
+  if(state.pack.loaderVersion) return state.pack.loaderVersion;
+  try{
+    const META={neoforge:"neo",forge:"forge",fabric:"fabric",quilt:"quilt"};
+    const man=await (await fetch(`https://launcher-meta.modrinth.com/${META[loader]}/v0/manifest.json`)).json();
+    const gvs=man.gameVersions||[];
+    const has=g=>g&&g.loaders&&g.loaders.length;
+    const exact=gvs.find(g=>g.id===mc);
+    const gv=has(exact)?exact:gvs.find(g=>String(g.id).includes("${")&&has(g));
+    if(!gv||!gv.loaders||!gv.loaders.length) return null;
+    const id=(gv.loaders.find(l=>l.stable)||gv.loaders[0]).id;
+    return String(id).replace(mc+"-","");
+  }catch{ return null; }
+}
+function exportMsg(html){ const b=$("exportBox"); b.hidden=false; b.innerHTML=html; }
+const li = arr => `<ul style="margin:0;padding-left:18px">${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+
+let exporting=false;
+$("mrpackBtn").addEventListener("click", async ()=>{
+  if(exporting) return;
+  const p=state.pack, mc=(p.mcVersion||"").trim(), loaderName=p.loader||"NeoForge", loader=LOADER_KEY[loaderName];
+  if(!mc){ exportMsg(`<strong>Minecraft-Version fehlt</strong><span class="msg">Trag oben unter „Pack-Infos ändern“ die Version ein, z. B. 1.21.1.</span>`); return; }
+  const ins=state.mods.filter(m=>m.status==="in");
+  if(!ins.length){ exportMsg(`<strong>Noch keine Mods in der Mische</strong><span class="msg">Nur Mods im Reiter „In der Mische“ kommen ins Pack.</span>`); return; }
+  if(!window.JSZip){ exportMsg(`<strong>Zip-Werkzeug konnte nicht geladen werden</strong><span class="msg">Lade die Seite neu und versuch es nochmal.</span>`); return; }
+  exporting=true; $("mrpackBtn").disabled=true;
+  const step = t => exportMsg(`<strong>Pack wird gebaut…</strong><span class="msg">${esc(t)}</span>`);
+  const missing=[], ok=[], deps=[];
+  try{
+    const files=new Map(), queue=[];
+    for(const m of ins){
+      step(`Suche ${m.name} für ${loaderName} ${mc}`);
+      const pid=await findProject(m,loader,mc);
+      if(!pid){ missing.push(`${m.name}: nicht auf Modrinth gefunden (Modrinth-Link eintragen hilft)`); continue; }
+      const v=pickVersion(await versionsFor(pid,loader,mc));
+      if(!v){ missing.push(`${m.name}: keine Version für ${loaderName} ${mc}`); continue; }
+      if(!files.has(v.project_id)){ files.set(v.project_id,{v,name:m.name,dep:false}); queue.push(v); }
+    }
+    while(queue.length){
+      const v=queue.shift();
+      for(const d of v.dependencies||[]){
+        if(d.dependency_type!=="required") continue;
+        if(d.project_id && files.has(d.project_id)) continue;
+        step("Hole benötigte Abhängigkeiten");
+        let dv=null;
+        if(d.version_id){ dv=await mr(`/version/${d.version_id}`); if(dv && files.has(dv.project_id)) continue; }
+        if(!dv && d.project_id) dv=pickVersion(await versionsFor(d.project_id,loader,mc));
+        if(!dv){ missing.push(`Eine benötigte Abhängigkeit von ${files.get(v.project_id).name} gibt es nicht für ${loaderName} ${mc}`); continue; }
+        files.set(dv.project_id,{v:dv,name:null,dep:true}); queue.push(dv);
+      }
+    }
+    if(!files.size){ exportMsg(`<strong>Keine passende Mod gefunden</strong>${li(missing)}`); return; }
+    step("Lade Projekt-Infos");
+    const projects=await mr(`/projects?ids=${encodeURIComponent(JSON.stringify([...files.keys()]))}`)||[];
+    const pmap=Object.fromEntries(projects.map(x=>[x.id,x]));
+    const side=s=> s==="unsupported"?"unsupported" : s==="optional"?"optional" : "required";
+    step(`Suche passende ${loaderName}-Version`);
+    const lv=await loaderVersion(loader,mc);
+    if(!lv){ exportMsg(`<strong>${esc(loaderName)}-Version unbekannt</strong><span class="msg">Trag sie unter „Pack-Infos ändern“ bei Loader-Version ein und versuch es nochmal.</span>`); return; }
+    const packName=p.name||"Unsere Mod-Mische";
+    const d=new Date(), stamp=`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+    const index={formatVersion:1, game:"minecraft", versionId:stamp, name:packName, summary:`${ins.length} Mods aus der Mod-Mische`, files:[], dependencies:{minecraft:mc,[DEP_KEY[loader]]:lv}};
+    for(const [pid,{v,name,dep}] of files){
+      const f=v.files.find(x=>x.primary)||v.files[0];
+      const pr=pmap[pid]||{};
+      index.files.push({path:"mods/"+f.filename, hashes:{sha1:f.hashes.sha1, sha512:f.hashes.sha512}, env:{client:side(pr.client_side), server:side(pr.server_side)}, downloads:[f.url], fileSize:f.size});
+      (dep?deps:ok).push(dep?(pr.title||f.filename):name);
+    }
+    step("Packe die Datei");
+    const zip=new window.JSZip();
+    zip.file("modrinth.index.json", JSON.stringify(index,null,2));
+    const blob=await zip.generateAsync({type:"blob", mimeType:"application/x-modrinth-modpack+zip"});
+    const fname=(packName.replace(/[^\w\-äöüÄÖÜß ]+/g,"").trim().replace(/\s+/g,"-")||"Mod-Mische")+`-${mc}.mrpack`;
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),30000);
+    exportMsg(`<strong>${esc(fname)} wurde heruntergeladen</strong>
+      <span class="msg">Öffne die Datei mit der Modrinth-App (Doppelklick oder in der App „Instanz erstellen“ → „Aus Datei importieren“). ${esc(loaderName)} ${esc(lv)}, Minecraft ${esc(mc)}.</span>
+      <span><b>${ok.length}</b> Mods drin${deps.length?`, plus <b>${deps.length}</b> automatisch ergänzte Abhängigkeiten:`:""}</span>${deps.length?li(deps):""}
+      ${missing.length?`<div class="dupe soft"><strong>Nicht im Pack (${missing.length})</strong>${li(missing)}</div>`:""}`);
+  }catch(err){
+    console.error(err);
+    exportMsg(`<strong>Das Pack konnte nicht gebaut werden</strong><span class="msg">${esc(err.message||"Verbindung zu Modrinth fehlgeschlagen.")} Versuch es gleich nochmal.</span>`);
+  }finally{ exporting=false; $("mrpackBtn").disabled=false; }
 });
 
 // ---------- Name ----------
